@@ -214,3 +214,5 @@ print("Moyenne de l'erreur entre théorique et expérimental")
 print(np.nanmean(M_erreur))
 print(np.nanmean(M_erreur1))
 print(np.nanmean(M_erreur2))
+
+
