@@ -316,7 +316,7 @@ def show_BPI(BPI):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     X, Y = np.meshgrid(np.arange(BPI.shape[0]), np.arange(BPI.shape[1]))
-    surf = ax.plot_surface(X, Y, BPI, cmap='viridis', edgecolor='none')
+    surf = ax.plot_surface(X, Y, BPI, cmap='magma', edgecolor='none')
     ax.set_title('BPI')
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
@@ -375,8 +375,94 @@ def show_rugosite2(M):
 #show_rugosite2(rugosite2(mnt,3))
 
 
-#def classifier(B_BPI, F_BPI, p, z, n=mnt.shape[0], m=mnt.shape[1]):
-#    for i in range(1,n):
-#        for j in range(1,m):
+import numpy as np
 
+
+def classifier_bathymetrie_BBPI(B_BPI, seuil=1, stdv=1):
+    """
+    Classe les zones bathymétriques selon le B-BPI uniquement.
+
+    Paramètres :
+    - B_BPI : array 2D du Broad-scale BPI
+    - seuil : valeur de seuil en unités (ex: 1 pour ±1 stdv)
+    - stdv : valeur d'écart-type (si B_BPI est en unités normalisées, mettre 1)
+
+    Renvoie :
+    - classes : array 2D contenant des entiers pour les classes
+        0 = dépression
+        1 = crête
+        2 = plat / pente intermédiaire
+    """
+    classes = np.zeros_like(B_BPI, dtype=int)
+
+    classes[B_BPI <= -seuil * stdv] = 0  # Dépressions
+    classes[B_BPI >= seuil * stdv] = 1  # Crêtes
+    classes[np.abs(B_BPI) < seuil * stdv] = 2  # Plat ou pente (w/in 1 stdv)
+
+    return classes
+
+
+def show_pente(M):
+    pente = Evans(M)
+    plt.figure(figsize=(8, 6))
+    im = plt.imshow(pente, cmap=cmap)
+    plt.colorbar(im, label='Pente (°)')
+    plt.title('Carte des pentes')
+    plt.xlabel('X (colonne)')
+    plt.ylabel('Y (ligne)')
+    plt.tight_layout()
+    plt.show()
+
+
+####Travail sur zone1
+
+##Extraction des données
+
+zone1=np.loadtxt("C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Zone 1-20250516\z_Zone1_8m.txt")
+zone_1 = zone1[:,:-1]
+taille1 = zone_1.shape[0]
+
+x1 = np.arange(0,taille1)
+y1 = np.arange(0,taille1)
+X1,Y1 = np.meshgrid(x1,y1)
+
+print(zone_1.shape)
+cmap = plt.cm.magma
+img = plt.contourf(X1, Y1, zone_1, levels=100, cmap=cmap)
+plt.contour(X1, Y1, zone_1, levels=8, colors='black')
+plt.title('Zone 1')
+plt.colorbar(img, label='Altitude [m]')
+plt.show()
+
+print(f"La pente est {Evans(zone_1)}")
+print(f"Le BPI est {BPI(zone_1, 50)}")
+
+show_BPI(BPI(zone_1, 50))
+show_pente(zone_1)
+
+
+from matplotlib.colors import ListedColormap
+
+def afficher_classes(classes):
+    """
+    Affiche une matrice de classes avec des couleurs personnalisées :
+    - 0 : rouge (dépression)
+    - 1 : jaune (crête)
+    - 2 : blanc (plat ou pente modérée)
+    """
+    # Définition des couleurs : [rouge, jaune, blanc]
+    couleurs = ['red', 'yellow', 'white']
+    cmap = ListedColormap(couleurs)
+
+    plt.figure(figsize=(8, 6))
+    im = plt.imshow(classes, cmap=cmap)
+    cbar = plt.colorbar(im, ticks=[0, 1, 2])
+    cbar.ax.set_yticklabels(['Dépression', 'Crête', 'Plat'])
+    plt.title('Classification bathymétrique (B-BPI)')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.tight_layout()
+    plt.show()
+
+afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 50)))
 
