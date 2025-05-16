@@ -2,9 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.mplot3d import Axes3D
+import scipy.ndimage as sp
 txt = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt"
-
-mnt = np.loadtxt(txt)
+txt1 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt"
+txt2 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt"
+txt3 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plateau.txt"
+mnt = np.loadtxt(txt3)
 print(mnt)
 print(mnt.shape)
 
@@ -196,24 +199,37 @@ def courbe(M):
 #print(courbe(C))
 #print(C.shape)
 
-def exposition(f_x,f_y):
-    return np.arctan2(-f_x,-f_y)
+def exposition(M):
+    res = np.zeros(M.shape)
+    for i in range(M.shape[0]):
+        res[i, 0] = np.nan
+        res[i, M.shape[0] - 1] = np.nan
+    for j in range(M.shape[1]):
+        res[0, j] = np.nan
+        res[M.shape[0] - 1, j] = np.nan
+    for i in range(1, M.shape[0] - 1):
+        for j in range(1, M.shape[1] - 1):
+            f_x = 0.5 * np.cos(j / 10 + 3 * np.sin(i / 20))
+            f_y = (3 / 4) * np.cos(j / 20) * np.cos(j / 10 + 3 * np.sin(i / 20)) + (2 / 3) * np.cos(i / 5)
+            res [i, j] = np.arctan2(-f_x,-f_y)
+    return res
 
+#print(f"l'exposition pour le double sin est {exposition(mnt)}")
 
 M_erreur = courbe(mnt)-TPP(mnt)
 M_erreur1 = courbe(mnt)-FCN(mnt)
 M_erreur2 = courbe(mnt)-Evans(mnt)
-print("__________________________________________________________")
-print("Ecart type de l'erreur entre théorique et expérimental")
-print(np.nanstd(M_erreur))
-print(np.nanstd(M_erreur1))
-print(np.nanstd(M_erreur2))
-print("__________________________________________________________")
-print("Moyenne de l'erreur entre théorique et expérimental")
+#print("__________________________________________________________")
+#print("Ecart type de l'erreur entre théorique et expérimental")
+#print(np.nanstd(M_erreur))
+#print(np.nanstd(M_erreur1))
+#print(np.nanstd(M_erreur2))
+#print("__________________________________________________________")
+#print("Moyenne de l'erreur entre théorique et expérimental")
 
-print(np.nanmean(M_erreur))
-print(np.nanmean(M_erreur1))
-print(np.nanmean(M_erreur2))
+#print(np.nanmean(M_erreur))
+#print(np.nanmean(M_erreur1))
+#print(np.nanmean(M_erreur2))
 
 
 ##Calcul du BPI (forme de disque)
@@ -268,11 +284,28 @@ def BPI_anneau(M,r1,r2):
 print(BPI_anneau(mnt,20,25))
 
 ##calcul du BPI (forme de secteur)
-def BPI_secteur(M,r,theta):
+def BPI_secteur(M, r, theta_init, theta_max):
+    # Création de la grille
     x = np.arange(-r, r + 1)
     X, Y = np.meshgrid(x, x)
-    D = np.sqrt(X ** 2 + Y ** 2)
-    filtre =((D <= r) & (theta>=0) & (theta<=(np.pi/4)*180/np.pi)).astype(float)
+    D = np.sqrt(X**2 + Y**2)
+    angle = np.arctan2(Y, X)  # correction ici
+
+    # Création du masque angulaire
+    if theta_init <= theta_max:
+        masque_angle = (angle >= theta_init) & (angle <= theta_max)
+    else:
+        # Cas où l’intervalle traverse la discontinuité -π/π
+        masque_angle = (angle >= theta_init) | (angle <= theta_max)
+
+    filtre = ((D <= r) & masque_angle).astype(float)
+    filtre /= np.sum(filtre)  # normalisation du filtre
+
+    # Application du filtre
+    filtered = convolve(M, filtre, mode='reflect')
+    res = M - filtered
+    return res
+
 
 
 def show_BPI(BPI):
@@ -292,8 +325,11 @@ def show_BPI(BPI):
 
 #print(f"Le BPI est : {BPI(mnt)}")
 
-show_BPI(BPI(mnt,5))
+theta1 = np.deg2rad(0)
+theta2 = np.deg2rad(45)
+#show_BPI(BPI(mnt,5))
 #show_BPI(BPI_anneau(mnt,20,25))
+show_BPI(BPI_secteur(mnt,5,theta1,theta2))
 
 ##Calcul de la rugosité (ecart type des profondeurs)
 
