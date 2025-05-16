@@ -216,3 +216,131 @@ print(np.nanmean(M_erreur1))
 print(np.nanmean(M_erreur2))
 
 
+##Calcul du BPI (forme de disque)
+import numpy as np
+from scipy.ndimage import convolve
+
+def BPI(M, r):
+    x = np.arange(-r, r + 1)
+    X, Y = np.meshgrid(x, x)
+    D = np.sqrt(X**2 + Y**2)
+    filtre = (D <= r).astype(float)
+    filtre /= np.sum(filtre)  # Normalisation
+
+    # Convolution de l'image avec le noyau
+    filtered = convolve(M, filtre, mode='constant')
+
+    # Soustraction : M - composante lissée
+    res = M - filtered
+    return res
+
+print(f"Le BPI pour un rayon de 5 est {BPI(mnt,5)}")
+
+##calcul du BPI (forme d'anneau)
+
+def BPI_anneau(M,r1,r2):
+    if r1>r2:
+        x = np.arange(-r1, r1 + 1)
+        X, Y = np.meshgrid(x, x)
+        D = np.sqrt(X ** 2 + Y ** 2)
+        filtre = ((D <= r1) & (D>=r2)).astype(float)
+        filtre /= np.sum(filtre)  # Normalisation
+
+        # Convolution de l'image avec le noyau
+        filtered = convolve(M, filtre, mode='constant')
+
+        # Soustraction : M - composante lissée
+        res = M - filtered
+    else:
+        x = np.arange(-r2, r2 + 1)
+        X, Y = np.meshgrid(x, x)
+        D = np.sqrt(X ** 2 + Y ** 2)
+        filtre = ((D <= r2) & (D >= r1)).astype(float)
+        filtre /= np.sum(filtre)  # Normalisation
+
+        # Convolution de l'image avec le noyau
+        filtered = convolve(M, filtre, mode='constant')
+
+        # Soustraction : M - composante lissée
+        res = M - filtered
+    return res
+
+print(BPI_anneau(mnt,20,25))
+
+##calcul du BPI (forme de secteur)
+def BPI_secteur(M,r,theta):
+    x = np.arange(-r, r + 1)
+    X, Y = np.meshgrid(x, x)
+    D = np.sqrt(X ** 2 + Y ** 2)
+    filtre =((D <= r) & (theta>=0) & (theta<=(np.pi/4)*180/np.pi)).astype(float)
+
+
+def show_BPI(BPI):
+    #plt.imshow(BPI, cmap='RdBu')
+    #plt.title('BPI')
+    #plt.colorbar()
+    #plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid(np.arange(BPI.shape[0]), np.arange(BPI.shape[1]))
+    surf = ax.plot_surface(X, Y, BPI, cmap='viridis', edgecolor='none')
+    ax.set_title('BPI')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    fig.colorbar(surf, ax=ax, label='Intensité')
+    plt.show()
+
+#print(f"Le BPI est : {BPI(mnt)}")
+
+show_BPI(BPI(mnt,5))
+#show_BPI(BPI_anneau(mnt,20,25))
+
+##Calcul de la rugosité (ecart type des profondeurs)
+
+def rugosite(M,n):
+    return sp.generic_filter(M, function=np.std, size=(n,n))
+
+def show_rugosite(M):
+    #plt.imshow(M, cmap='RdBu')
+    #plt.title('Rugosité')
+    #plt.colorbar()
+    #plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid(np.arange(M.shape[0]), np.arange(M.shape[1]))
+    ax.plot_surface(X, Y, M, cmap='RdBu', edgecolor='none')
+    ax.set_title('Rugosité')
+    plt.show()
+
+#print(rugosite(mnt,3))
+#show_rugosite(rugosite(mnt,3))
+
+##calcul de la rugosité (écart type des différences entre la profondeur du MNT et la profondeur du MNT lissé)
+
+def terrain_lisse(M):
+    return sp.gaussian_filter(M, sigma=1) #sigma =1 est pour une fenetre de 3*3
+
+def rugosite2(M,n):
+    diff = M - terrain_lisse(M)
+    return sp.generic_filter(diff, function=np.std ,size=(n,n))
+
+def show_rugosite2(M):
+    #plt.imshow(M, cmap='RdBu')
+    #plt.title('Rugosité')
+    #plt.colorbar()
+    #plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid(np.arange(M.shape[0]), np.arange(M.shape[1]))
+    ax.plot_surface(X, Y, M, cmap='RdBu', edgecolor='none')
+    ax.set_title('Rugosité')
+    plt.show()
+
+#show_rugosite2(rugosite2(mnt,3))
+
+
+#def classifier(B_BPI, F_BPI, p, z, n=mnt.shape[0], m=mnt.shape[1]):
+#    for i in range(1,n):
+#        for j in range(1,m):
+
+
