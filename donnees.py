@@ -5,6 +5,16 @@ from mpl_toolkits.mplot3d import Axes3D
 import scipy.ndimage as sp
 from scipy.ndimage import convolve
 from matplotlib import cm
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import LightSource, ListedColormap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import pandas
+from sklearn import cluster
+from sklearn.preprocessing import StandardScaler
+# Fonctions de calcul des indicateurs
+#from fonctions_indicateurs import *
+
 txt = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt"
 txt1 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt"
 txt2 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt"
@@ -519,8 +529,79 @@ def afficher_classes(classes):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, i)))
 
 #afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
-afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 100), BPI(zone_1, 15),Evans(zone_1)))
+#afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 90), BPI(zone_1, 11),Evans(zone_1)))
 
 #for i  in range(1,15):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 40), BPI(zone_1, i), Evans(zone_1)))
 
+
+##Machine learning
+
+x = np.arange(zone_1.shape[1])
+y = np.arange(zone_1.shape[0])
+X, Y = np.meshgrid(x, y)
+
+print('Pente FCN')
+p_evans = Evans(zone_1)
+
+print('W BPI')
+wbpi = BPI(zone_1, 20)#B_BPI pour rayon de 20
+print('F BPI')
+fbpi = BPI(zone_1, 10)##F_BPI pour rayon de 10
+print('Rugosité')
+rug = rugosite(zone_1, 15)
+# Création d'un DataFrame pour stocker l'ensemble des colonnes
+df = pandas.DataFrame({'x': X.flatten(), 'y': Y.flatten(), 'z': zone_1.flatten(),
+                       'p': p_evans.flatten(), 'wbpi': wbpi.flatten(),
+                       'fbpi': fbpi.flatten(),'rug' : rug.flatten()})
+# Suppression des lignes contenant des valeurs non définies
+data = df.dropna().copy()
+
+# Choix du nombre de classes :
+n = 11
+# Le paramètre random_state permet d'avoir des classifications reproductibles
+kmeans = cluster.KMeans(n_clusters=n, n_init='auto', random_state=42)
+# Colonnes sélectionnées pour la classification
+select = data[['z', 'p', 'wbpi', 'fbpi', 'rug']]
+
+# Mise à l'échelle des données
+scaler = StandardScaler()
+data_ok = scaler.fit_transform(select)
+
+# Création des n classes
+kmeans.fit(data_ok)
+# Ajout du résultat comme nouvelle colonne
+df[f'kmeans_{n}'] = pandas.Series(kmeans.labels_, index=data.index)
+# Mise en forme des résultats sous forme de matrice
+mat = df.pivot(columns='x', index='y')
+# Répartition des classes :
+print('Classes : ', df[['x', f'kmeans_{n}']].groupby(f'kmeans_{n}').count())
+# Mise en forme des résultats sous forme de matrice
+mat = df.pivot(columns='x', index='y')
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
+
+cmap = plt.cm.cubehelix
+ls = LightSource(azdeg=-45, altdeg=35)
+# Si la matrice contient des NaN, utiliser un tableau masqué
+mnt_mask = np.ma.masked_invalid(mnt)
+im = ax[0].imshow(mnt, origin='lower', cmap=cmap)
+# Création de la carte ombrée
+rgb = ls.shade(mnt_mask, cmap=cmap, vert_exag=4, blend_mode='soft')
+p = ax[0].imshow(rgb, origin='lower', cmap=cmap)
+divider = make_axes_locatable(ax[0])
+cax = divider.append_axes("right", size="5%", pad=0.05)
+# Pour la colorbar, reprendre le "im" créé avec le 1er imshow
+plt.colorbar(im, label='z[m]', cax=cax)
+ax[0].set_title('Terrain')
+
+# Palette de couleurs discrète
+cm = plt.get_cmap('tab20', n)
+# Palette de couleurs personnalisée
+#cm = ListedColormap(["red", "lightblue", "gray", "#E0D010", "darkgreen"])
+cl = ax[1].imshow(mat[f'kmeans_{n}'], origin='lower', cmap=cm, vmin=-0.5, vmax=n-0.5)
+divider = make_axes_locatable(ax[1])
+cax = divider.append_axes("right", size="5%", pad=0.05)
+plt.colorbar(cl, label='classe', cax=cax)
+ax[1].set_title(f'kmeans_{n}')
+plt.show()
