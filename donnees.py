@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.mplot3d import Axes3D
 import scipy.ndimage as sp
+from scipy.ndimage import convolve
+from matplotlib import cm
 txt = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt"
 txt1 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt"
 txt2 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt"
@@ -30,11 +32,11 @@ profondeur_min = np.min(mnt)
 profondeur_max = np.max(mnt)
 profondeur_moyenne = np.mean(mnt)
 ecart_type_profondeur = np.std(mnt)
-print("__________________________________________________________")
-print(f"profondeur_min = {profondeur_min}")
-print(f"profondeur_max = {profondeur_max}")
-print(f"profondeur_moyenne = {profondeur_moyenne}")
-print(f"ecart_type_profondeur = {ecart_type_profondeur}")
+#print("__________________________________________________________")
+#print(f"profondeur_min = {profondeur_min}")
+#print(f"profondeur_max = {profondeur_max}")
+#print(f"profondeur_moyenne = {profondeur_moyenne}")
+#print(f"ecart_type_profondeur = {ecart_type_profondeur}")
 
 ##Tracé de l'histogramme
 
@@ -52,13 +54,8 @@ ax.set_xlabel('X')
 ax.set_ylabel('Y')
 ax.set_zlabel('Profondeur [m]')
 plt.tight_layout()
-plt.show()
+#plt.show()
 
-
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
 
 # Réduction de taille pour lisibilité
 step = 5
@@ -89,7 +86,7 @@ ax.set_ylabel('Y')
 ax.set_zlabel('Profondeur')
 ax.set_title('Histogramme 3D coloré selon la profondeur')
 plt.tight_layout()
-plt.show()
+#plt.show()
 
 
 
@@ -233,8 +230,6 @@ M_erreur2 = courbe(mnt)-Evans(mnt)
 
 
 ##Calcul du BPI (forme de disque)
-import numpy as np
-from scipy.ndimage import convolve
 
 def BPI(M, r):
     x = np.arange(-r, r + 1)
@@ -250,7 +245,7 @@ def BPI(M, r):
     res = M - filtered
     return res
 
-print(f"Le BPI pour un rayon de 5 est {BPI(mnt,5)}")
+#print(f"Le BPI pour un rayon de 5 est {BPI(mnt,5)}")
 
 ##calcul du BPI (forme d'anneau)
 
@@ -281,7 +276,7 @@ def BPI_anneau(M,r1,r2):
         res = M - filtered
     return res
 
-print(BPI_anneau(mnt,20,25))
+#print(BPI_anneau(mnt,20,25))
 
 ##calcul du BPI (forme de secteur)
 def BPI_secteur(M, r, theta_init, theta_max):
@@ -329,7 +324,7 @@ theta1 = np.deg2rad(0)
 theta2 = np.deg2rad(45)
 #show_BPI(BPI(mnt,5))
 #show_BPI(BPI_anneau(mnt,20,25))
-show_BPI(BPI_secteur(mnt,5,theta1,theta2))
+#show_BPI(BPI_secteur(mnt,5,theta1,theta2))
 
 ##Calcul de la rugosité (ecart type des profondeurs)
 
@@ -375,31 +370,55 @@ def show_rugosite2(M):
 #show_rugosite2(rugosite2(mnt,3))
 
 
-import numpy as np
 
-
-def classifier_bathymetrie_BBPI(B_BPI, seuil=1, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, seuil=0.5, stdv=1):
     """
-    Classe les zones bathymétriques selon le B-BPI uniquement.
+    Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
     Paramètres :
     - B_BPI : array 2D du Broad-scale BPI
-    - seuil : valeur de seuil en unités (ex: 1 pour ±1 stdv)
-    - stdv : valeur d'écart-type (si B_BPI est en unités normalisées, mettre 1)
+    - F_BPI : array 2D du Fine-scale BPI
+    - seuil : seuil de classification (en unités d'écart-type)
+    - stdv : écart-type des BPI (mettre 1 si déjà standardisé)
 
     Renvoie :
-    - classes : array 2D contenant des entiers pour les classes
-        0 = dépression
-        1 = crête
+    - classes : array 2D contenant les classes 0 à 9 :
+        0 = large dépression
+        1 = large crête
         2 = plat / pente intermédiaire
+        3 = dépression étroite dans une grande dépression
+        4 = crête étroite dans une grande dépression
+        5 = plat dans une grande dépression
+        6 = crête étroite dans une grande crête
+        7 = dépression locale dans une crête
+        8 = crête locale dans une pente
+        9 = dépression locale dans une pente
     """
-    classes = np.zeros_like(B_BPI, dtype=int)
+    classes = np.full_like(B_BPI, fill_value=2, dtype=int)  # par défaut = plat
 
-    classes[B_BPI <= -seuil * stdv] = 0  # Dépressions
-    classes[B_BPI >= seuil * stdv] = 1  # Crêtes
-    classes[np.abs(B_BPI) < seuil * stdv] = 2  # Plat ou pente (w/in 1 stdv)
+    mask_depression = B_BPI <= -seuil * stdv
+    mask_crest = B_BPI >= seuil * stdv
+    mask_flat = np.abs(B_BPI) < seuil * stdv
+
+    # Large structures
+    classes[mask_depression] = 0
+    classes[mask_crest] = 1
+
+    # Détailler les dépressions
+    classes[np.logical_and(mask_depression, F_BPI <= -seuil * stdv)] = 3
+    classes[np.logical_and(mask_depression, F_BPI >= seuil * stdv)] = 4
+    classes[np.logical_and(mask_depression, np.abs(F_BPI) < seuil * stdv)] = 5
+
+    # Détailler les crêtes
+    classes[np.logical_and(mask_crest, F_BPI >= seuil * stdv)] = 6
+    classes[np.logical_and(mask_crest, F_BPI <= -seuil * stdv)] = 7
+
+    # Détail des zones plates
+    classes[np.logical_and(mask_flat, F_BPI >= seuil * stdv)] = 8
+    classes[np.logical_and(mask_flat, F_BPI <= -seuil * stdv)] = 9
 
     return classes
+
 
 
 def show_pente(M):
@@ -443,26 +462,60 @@ show_pente(zone_1)
 
 from matplotlib.colors import ListedColormap
 
+from matplotlib.patches import Patch
+
 def afficher_classes(classes):
     """
-    Affiche une matrice de classes avec des couleurs personnalisées :
-    - 0 : rouge (dépression)
-    - 1 : jaune (crête)
-    - 2 : blanc (plat ou pente modérée)
+    Affiche une matrice de classes avec des couleurs personnalisées (10 classes).
+    Une légende est ajoutée à droite avec le nom de chaque classe.
     """
-    # Définition des couleurs : [rouge, jaune, blanc]
-    couleurs = ['red', 'yellow', 'white']
+    couleurs = [
+        'darkred',     # 0 : large dépression
+        'gold',        # 1 : large crête
+        'white',       # 2 : plat
+        'red',         # 3 : narrow depression
+        'orange',      # 4 : narrow crest in depression
+        'pink',        # 5 : flat in depression
+        'darkorange',  # 6 : narrow crest
+        'purple',      # 7 : depression on crest
+        'lightgreen',  # 8 : crest in slope
+        'lightblue'    # 9 : depression in slope
+    ]
+    labels = [
+        'Large dépression',
+        'Large crête',
+        'Plat',
+        'Narrow dépression',
+        'Narrow crête in dépression',
+        'Plat in dépression',
+        'Narrow crête',
+        'Dépression sur crête',
+        'Crête dans pente',
+        'Dépression dans pente'
+    ]
+
     cmap = ListedColormap(couleurs)
 
-    plt.figure(figsize=(8, 6))
-    im = plt.imshow(classes, cmap=cmap)
-    cbar = plt.colorbar(im, ticks=[0, 1, 2])
-    cbar.ax.set_yticklabels(['Dépression', 'Crête', 'Plat'])
-    plt.title('Classification bathymétrique (B-BPI)')
+    plt.figure(figsize=(10, 8))
+    im = plt.imshow(classes, cmap=cmap, origin='lower')
+    plt.title('Classification bathymétrique')
     plt.xlabel('X')
     plt.ylabel('Y')
+
+    # Créer les patches pour la légende
+    legend_elements = [Patch(facecolor=couleurs[i], edgecolor='black', label=labels[i]) for i in range(len(labels))]
+
+    # Afficher la légende à droite
+    plt.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+
     plt.tight_layout()
+    plt.gca().invert_yaxis()
     plt.show()
 
-afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 50)))
+
+#for i in range(5,21):
+#    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, i)))
+
+#afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
+afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
 
