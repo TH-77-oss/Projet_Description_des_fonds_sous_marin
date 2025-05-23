@@ -371,7 +371,7 @@ def show_rugosite2(M):
 
 
 
-def classifier_bathymetrie_BBPI(B_BPI, F_BPI, seuil=0.5, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
     """
     Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
@@ -416,6 +416,17 @@ def classifier_bathymetrie_BBPI(B_BPI, F_BPI, seuil=0.5, stdv=1):
     # Détail des zones plates
     classes[np.logical_and(mask_flat, F_BPI >= seuil * stdv)] = 8
     classes[np.logical_and(mask_flat, F_BPI <= -seuil * stdv)] = 9
+
+    # Détail des zones plates (ajout pente)
+    #mask_flat_crest_steep = np.logical_and.reduce((mask_flat, F_BPI >= seuil * stdv, pente > 5))
+    #mask_flat_crest_gentle = np.logical_and.reduce((mask_flat, F_BPI >= seuil * stdv, pente <= 5))
+    #mask_flat_depr_steep = np.logical_and.reduce((mask_flat, F_BPI <= -seuil * stdv, pente > 5))
+    #mask_flat_depr_gentle = np.logical_and.reduce((mask_flat, F_BPI <= -seuil * stdv, pente <= 5))
+
+    #classes[mask_flat_crest_steep] = 10
+    #classes[mask_flat_crest_gentle] = 11
+    #classes[mask_flat_depr_steep] = 12
+    #classes[mask_flat_depr_gentle] = 13
 
     return classes
 
@@ -469,30 +480,21 @@ def afficher_classes(classes):
     Affiche une matrice de classes avec des couleurs personnalisées (10 classes).
     Une légende est ajoutée à droite avec le nom de chaque classe.
     """
-    couleurs = [
-        'darkred',     # 0 : large dépression
-        'gold',        # 1 : large crête
-        'white',       # 2 : plat
-        'red',         # 3 : narrow depression
-        'orange',      # 4 : narrow crest in depression
-        'pink',        # 5 : flat in depression
-        'darkorange',  # 6 : narrow crest
-        'purple',      # 7 : depression on crest
-        'lightgreen',  # 8 : crest in slope
-        'lightblue'    # 9 : depression in slope
-    ]
-    labels = [
-        'Large dépression',
-        'Large crête',
-        'Plat',
-        'Narrow dépression',
-        'Narrow crête in dépression',
-        'Plat in dépression',
-        'Narrow crête',
-        'Dépression sur crête',
-        'Crête dans pente',
-        'Dépression dans pente'
-    ]
+    couleurs = ([
+        'darkred', 'gold', 'white', 'red', 'orange',
+        'pink', 'darkorange', 'purple', 'lightgreen', 'lightblue',
+        'lime'])
+        #, 'lightyellow', 'teal', 'skyblue')]
+
+    labels = ([
+        'Large dépression', 'Large crête', 'Plat',
+        'Narrow dépression', 'Narrow crête in dépression',
+        'Plat in dépression', 'Narrow crête',
+        'Dépression sur crête', 'Crête dans pente',
+        'Dépression dans pente',
+        'Crête pente forte'])
+        #, 'Crête pente faible'])
+        #'Dépression pente forte', 'Dépression pente faible']
 
     cmap = ListedColormap(couleurs)
 
@@ -517,5 +519,8 @@ def afficher_classes(classes):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, i)))
 
 #afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
-afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
+afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 100), BPI(zone_1, 15),Evans(zone_1)))
+
+#for i  in range(1,15):
+#    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 40), BPI(zone_1, i), Evans(zone_1)))
 
