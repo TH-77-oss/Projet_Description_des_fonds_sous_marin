@@ -7,6 +7,7 @@ from scipy.ndimage import convolve
 from matplotlib import cm
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import CenteredNorm
 from matplotlib.colors import LightSource, ListedColormap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas
@@ -249,7 +250,7 @@ def BPI(M, r):
     filtre /= np.sum(filtre)  # Normalisation
 
     # Convolution de l'image avec le noyau
-    filtered = convolve(M, filtre, mode='constant')
+    filtered = convolve(M, filtre, mode='constant', cval=np.nan)
 
     # Soustraction : M - composante lissée
     res = M - filtered
@@ -268,7 +269,7 @@ def BPI_anneau(M,r1,r2):
         filtre /= np.sum(filtre)  # Normalisation
 
         # Convolution de l'image avec le noyau
-        filtered = convolve(M, filtre, mode='constant')
+        filtered = convolve(M, filtre, mode='constant', cval=np.nan)
 
         # Soustraction : M - composante lissée
         res = M - filtered
@@ -280,7 +281,7 @@ def BPI_anneau(M,r1,r2):
         filtre /= np.sum(filtre)  # Normalisation
 
         # Convolution de l'image avec le noyau
-        filtered = convolve(M, filtre, mode='constant')
+        filtered = convolve(M, filtre, mode='constant', cval=np.nan)
 
         # Soustraction : M - composante lissée
         res = M - filtered
@@ -380,8 +381,8 @@ def show_rugosite2(M):
 #show_rugosite2(rugosite2(mnt,3))
 
 
-
-def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
+#def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, seuil1=3.27,seuil2=1.5, seuil3=1, stdv=1):
     """
     Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
@@ -406,26 +407,33 @@ def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
     """
     classes = np.full_like(B_BPI, fill_value=2, dtype=int)  # par défaut = plat
 
-    mask_depression = B_BPI <= -seuil * stdv
-    mask_crest = B_BPI >= seuil * stdv
-    mask_flat = np.abs(B_BPI) < seuil * stdv
+    mask_depression = B_BPI <= -seuil1 * stdv
+    mask_crest = B_BPI >= seuil1 * stdv
+    mask_flat = np.abs(B_BPI) < seuil1 * stdv
 
     # Large structures
     classes[mask_depression] = 0
     classes[mask_crest] = 1
+    classes[mask_flat] = 2
 
+    classes[np.logical_and(mask_flat, F_BPI <= seuil2)] = 3
+    classes[np.logical_and(mask_flat, F_BPI >= seuil2)] = 4
+    classes[np.logical_and(mask_flat, np.abs(F_BPI) < seuil2)] = 5
+
+    classes[np.logical_and(mask_depression, pente <= seuil3)] = 6
+    classes[np.logical_and(mask_depression, pente > seuil3)] = 7
     # Détailler les dépressions
-    classes[np.logical_and(mask_depression, F_BPI <= -seuil * stdv)] = 3
-    classes[np.logical_and(mask_depression, F_BPI >= seuil * stdv)] = 4
-    classes[np.logical_and(mask_depression, np.abs(F_BPI) < seuil * stdv)] = 5
-
-    # Détailler les crêtes
-    classes[np.logical_and(mask_crest, F_BPI >= seuil * stdv)] = 6
-    classes[np.logical_and(mask_crest, F_BPI <= -seuil * stdv)] = 7
-
-    # Détail des zones plates
-    classes[np.logical_and(mask_flat, F_BPI >= seuil * stdv)] = 8
-    classes[np.logical_and(mask_flat, F_BPI <= -seuil * stdv)] = 9
+    # classes[np.logical_and(mask_depression, F_BPI <= -seuil * stdv)] = 3
+    # classes[np.logical_and(mask_depression, F_BPI >= seuil * stdv)] = 4
+    # classes[np.logical_and(mask_depression, np.abs(F_BPI) < seuil * stdv)] = 5
+    #
+    # # Détailler les crêtes
+    # classes[np.logical_and(mask_crest, F_BPI >= seuil * stdv)] = 6
+    # classes[np.logical_and(mask_crest, F_BPI <= -seuil * stdv)] = 7
+    #
+    # # Détail des zones plates
+    # classes[np.logical_and(mask_flat, F_BPI >= seuil * stdv)] = 8
+    # classes[np.logical_and(mask_flat, F_BPI <= -seuil * stdv)] = 9
 
     # Détail des zones plates (ajout pente)
     #mask_flat_crest_steep = np.logical_and.reduce((mask_flat, F_BPI >= seuil * stdv, pente > 5))
@@ -442,10 +450,11 @@ def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
 
 
 
+
 def show_pente(M):
     pente = Evans(M)
     plt.figure(figsize=(8, 6))
-    im = plt.imshow(pente, cmap=cmap)
+    im = plt.imshow(pente, cmap='bwr')
     plt.colorbar(im, label='Pente (°)')
     plt.title('Carte des pentes')
     plt.xlabel('X (colonne)')
@@ -462,6 +471,8 @@ zone1=np.loadtxt("C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Zone 1-2
 zone_1 = zone1[:,:-1]
 taille1 = zone_1.shape[0]
 
+show_pente(zone_1)
+
 x1 = np.arange(0,taille1)
 y1 = np.arange(0,taille1)
 X1,Y1 = np.meshgrid(x1,y1)
@@ -472,13 +483,29 @@ img = plt.contourf(X1, Y1, zone_1, levels=100, cmap=cmap)
 plt.contour(X1, Y1, zone_1, levels=8, colors='black')
 plt.title('Zone 1')
 plt.colorbar(img, label='Altitude [m]')
-plt.show()
+#plt.show()
 
 print(f"La pente est {Evans(zone_1)}")
 print(f"Le BPI est {BPI(zone_1, 50)}")
 
-show_BPI(BPI(zone_1, 50))
-show_pente(zone_1)
+#show_BPI(BPI(zone_1, 50))
+#show_pente(zone_1)
+
+radii = [10, 20, 30]
+
+plt.figure(figsize=(15, 5))
+
+for i, r in enumerate(radii):
+    bpi_img = BPI(zone_1, r)
+    plt.subplot(1, len(radii), i+1)
+    plt.imshow(bpi_img, cmap='bwr', norm=CenteredNorm(0,halfrange=4))
+    plt.colorbar()
+    plt.title(f'BPI Rayon = {r}')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
 
 
 from matplotlib.colors import ListedColormap
@@ -491,18 +518,17 @@ def afficher_classes(classes):
     Une légende est ajoutée à droite avec le nom de chaque classe.
     """
     couleurs = ([
-        'darkred', 'gold', 'white', 'red', 'orange',
-        'pink', 'darkorange', 'purple', 'lightgreen', 'lightblue',
-        'lime'])
+        'darkred', 'gold', 'white', 'red', 'orange','pink'])
+    # , 'darkorange', 'purple', 'lightgreen', 'lightblue',
+        # 'lime'])
         #, 'lightyellow', 'teal', 'skyblue')]
 
-    labels = ([
-        'Large dépression', 'Large crête', 'Plat',
-        'Narrow dépression', 'Narrow crête in dépression',
-        'Plat in dépression', 'Narrow crête',
-        'Dépression sur crête', 'Crête dans pente',
-        'Dépression dans pente',
-        'Crête pente forte'])
+    labels = (([
+        'Large dépression', 'Large crête', 'Plat', 'Narrow dépression', 'Narrow crête in dépression','Plat in dépression']))
+        #, 'Narrow crête',
+        # 'Dépression sur crête', 'Crête dans pente',
+        # 'Dépression dans pente',
+        # 'Crête pente forte'])
         #, 'Crête pente faible'])
         #'Dépression pente forte', 'Dépression pente faible']
 
@@ -524,11 +550,29 @@ def afficher_classes(classes):
     plt.gca().invert_yaxis()
     plt.show()
 
+seuil1 = 3.27
+B_BPI = BPI(zone_1, 20)
+mask_flat = np.abs(B_BPI) < seuil1  # zones à garder (valeurs entre -seuil1 et +seuil1)
+radii1 = [5, 10, 15]
+for r in radii1:
+    F_BPI = BPI(zone_1, r)
+
+    # On masque les zones où B_BPI est hors des limites : elles deviennent NaN
+    masked_F_BPI = np.where(mask_flat, F_BPI, np.nan)
+
+    # Affichage uniquement des zones valides
+    plt.figure(figsize=(6, 6))
+    im = plt.imshow(masked_F_BPI, cmap='bwr', norm=CenteredNorm(0, halfrange=0.5))
+    plt.colorbar(im)
+    plt.title(f'Fine BPI (r={r}) | Zones où -{seuil1} < B_BPI < {seuil1}')
+    plt.axis('off')
+    #plt.show()
+
 
 #for i in range(5,21):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, i)))
 
-#afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1, 10)))
+afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1,15), Evans(zone_1)))
 #afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 90), BPI(zone_1, 11),Evans(zone_1)))
 
 #for i  in range(1,15):
@@ -604,4 +648,4 @@ divider = make_axes_locatable(ax[1])
 cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(cl, label='classe', cax=cax)
 ax[1].set_title(f'kmeans_{n}')
-plt.show()
+#plt.show()
