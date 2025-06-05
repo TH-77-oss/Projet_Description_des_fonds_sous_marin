@@ -16,38 +16,119 @@ from sklearn.preprocessing import StandardScaler
 # Fonctions de calcul des indicateurs
 #from fonctions_indicateurs import *
 
-txt = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt"
-txt1 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt"
-txt2 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt"
-txt3 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plateau.txt"
-mnt = np.loadtxt(txt3)
-print(mnt)
-print(mnt.shape)
+# txt = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt"
+# txt1 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt"
+# txt2 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt"
+# txt3 = "C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plateau.txt"
+# mnt = np.loadtxt(txt3)
+# #print(mnt)
+# #print(mnt.shape)
+#
+# taille = mnt.shape[0]
+#
+# x = np.arange(0,taille)
+# y = np.arange(0,taille)
+# X,Y = np.meshgrid(x,y)
+#
+# cmap = plt.cm.gist_earth
+# img = plt.contourf(X, Y, mnt, levels=100, cmap=cmap)
+# plt.contour(X, Y, mnt, levels=5, colors='black')
+# plt.title('Double sinus')
+# plt.colorbar(img, label='Altitude [m]')
+# plt.show()
 
-taille = mnt.shape[0]
+import numpy as np
+import matplotlib.pyplot as plt
 
-x = np.arange(0,taille)
-y = np.arange(0,taille)
-X,Y = np.meshgrid(x,y)
+# Chemins vers les fichiers
+txts = [
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plateau.txt"
+]
 
+titles = ['Double sinus', 'Sin cardinal', 'Plan', 'Plateau']
 cmap = plt.cm.gist_earth
-img = plt.contourf(X, Y, mnt, levels=100, cmap=cmap)
-plt.contour(X, Y, mnt, levels=5, colors='black')
-plt.title('Double sinus')
-plt.colorbar(img, label='Altitude [m]')
+
+fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+
+for i, (path, title) in enumerate(zip(txts, titles)):
+    mnt = np.loadtxt(path)
+    taille = mnt.shape[0]
+    x = np.arange(0, taille)
+    y = np.arange(0, taille)
+    X, Y = np.meshgrid(x, y)
+
+    ax = axs[i // 2, i % 2]
+    img = ax.contourf(X, Y, mnt, levels=100, cmap=cmap)
+    ax.contour(X, Y, mnt, levels=5, colors='black')
+    ax.set_title(title)
+    ax.axis('off')
+
+    fig.colorbar(img, ax=ax, shrink=0.8, fraction=0.046, label='Altitude [m]')
+
+plt.tight_layout()
+#plt.show()
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Chemins vers les fichiers
+txts = [
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\sin_card.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plan.txt",
+    r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\plateau.txt"
+]
+
+titles = ['Double sinus', 'Sin cardinal', 'Plan', 'Plateau']
+cmap = plt.cm.gist_earth
+
+fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+
+for i, (path, title) in enumerate(zip(txts, titles)):
+    mnt = np.loadtxt(path)
+    taille = mnt.shape[0]
+    x = np.arange(0, taille)
+    y = np.arange(0, taille)
+    X, Y = np.meshgrid(x, y)
+
+    ax = axs[i // 2, i % 2]
+    img = ax.contourf(X, Y, mnt, levels=100, cmap=cmap)
+    ax.contour(X, Y, mnt, levels=5, colors='black')
+    ax.set_title(title)
+    ax.axis('off')
+
+    fig.colorbar(img, ax=ax, shrink=0.8, fraction=0.046, label='Altitude [m]')
+
+    # Calcul et affichage des caractéristiques
+    profondeur_min = np.min(mnt)
+    profondeur_max = np.max(mnt)
+    profondeur_moyenne = np.mean(mnt)
+    ecart_type_profondeur = np.std(mnt)
+
+    print(f"--- {title} ---")
+    print(f"Min       : {profondeur_min:.3f}")
+    print(f"Max       : {profondeur_max:.3f}")
+    print(f"Moyenne   : {profondeur_moyenne:.3f}")
+    print(f"Écart-type: {ecart_type_profondeur:.3f}")
+    print()
+
+plt.tight_layout()
 #plt.show()
 
 ##Calcul des caractéristiques du terrain de double sin
 
-profondeur_min = np.min(mnt)
-profondeur_max = np.max(mnt)
-profondeur_moyenne = np.mean(mnt)
-ecart_type_profondeur = np.std(mnt)
-#print("__________________________________________________________")
-#print(f"profondeur_min = {profondeur_min}")
-#print(f"profondeur_max = {profondeur_max}")
-#print(f"profondeur_moyenne = {profondeur_moyenne}")
-#print(f"ecart_type_profondeur = {ecart_type_profondeur}")
+# profondeur_min = np.min(mnt)
+# profondeur_max = np.max(mnt)
+# profondeur_moyenne = np.mean(mnt)
+# ecart_type_profondeur = np.std(mnt)
+# #print("__________________________________________________________")
+# print(f"profondeur_min = {profondeur_min}")
+# print(f"profondeur_max = {profondeur_max}")
+# print(f"profondeur_moyenne = {profondeur_moyenne}")
+# print(f"ecart_type_profondeur = {ecart_type_profondeur}")
 
 ##Tracé de l'histogramme
 
@@ -88,15 +169,15 @@ norm = plt.Normalize(dz.min(), dz.max())
 colors = cm.viridis(norm(dz))  # Remplace viridis par la cmap de ton choix
 
 # Tracé
-fig = plt.figure(figsize=(10, 6))
-ax = fig.add_subplot(111, projection='3d')
-ax.bar3d(x, y, z, 1, 1, dz, shade=True, color=colors)
-
-ax.set_xlabel('X')
-ax.set_ylabel('Y')
-ax.set_zlabel('Profondeur')
-ax.set_title('Histogramme 3D coloré selon la profondeur')
-plt.tight_layout()
+# fig = plt.figure(figsize=(10, 6))
+# ax = fig.add_subplot(111, projection='3d')
+# ax.bar3d(x, y, z, 1, 1, dz, shade=True, color=colors)
+#
+# ax.set_xlabel('X')
+# ax.set_ylabel('Y')
+# ax.set_zlabel('Profondeur')
+# ax.set_title('Histogramme 3D coloré selon la profondeur')
+# plt.tight_layout()
 #plt.show()
 
 
@@ -340,7 +421,7 @@ theta2 = np.deg2rad(45)
 ##Calcul de la rugosité (ecart type des profondeurs)
 
 def rugosite(M,n):
-    return sp.generic_filter(M, function=np.std, size=(n,n))
+    return sp.generic_filter(M, function=np.std, size=(n,n), cval=np.nan)
 
 def show_rugosite(M):
     #plt.imshow(M, cmap='RdBu')
@@ -382,7 +463,7 @@ def show_rugosite2(M):
 
 
 #def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
-def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, seuil1=3.27,seuil2=1.5, seuil3=1, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rugosite, seuil1=3.27,seuil2=1.5, seuil3=45, seuil4=1.8, stdv=1):
     """
     Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
@@ -405,7 +486,7 @@ def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, seuil1=3.27,seuil2=1.5, seu
         8 = crête locale dans une pente
         9 = dépression locale dans une pente
     """
-    classes = np.full_like(B_BPI, fill_value=2, dtype=int)  # par défaut = plat
+    classes = np.full_like(B_BPI, fill_value=np.nan)  # par défaut = plat
 
     mask_depression = B_BPI <= -seuil1 * stdv
     mask_crest = B_BPI >= seuil1 * stdv
@@ -417,11 +498,14 @@ def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, seuil1=3.27,seuil2=1.5, seu
     classes[mask_flat] = 2
 
     classes[np.logical_and(mask_flat, F_BPI <= seuil2)] = 3
-    classes[np.logical_and(mask_flat, F_BPI >= seuil2)] = 4
+    classes[np.logical_and(mask_flat, F_BPI > seuil2)] = 4
     classes[np.logical_and(mask_flat, np.abs(F_BPI) < seuil2)] = 5
 
     classes[np.logical_and(mask_depression, pente <= seuil3)] = 6
     classes[np.logical_and(mask_depression, pente > seuil3)] = 7
+
+    classes[np.logical_and.reduce((mask_flat, F_BPI <= seuil2, pente <= seuil3, rugosite > seuil4))] = 8
+
     # Détailler les dépressions
     # classes[np.logical_and(mask_depression, F_BPI <= -seuil * stdv)] = 3
     # classes[np.logical_and(mask_depression, F_BPI >= seuil * stdv)] = 4
@@ -471,13 +555,13 @@ zone1=np.loadtxt("C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Zone 1-2
 zone_1 = zone1[:,:-1]
 taille1 = zone_1.shape[0]
 
-show_pente(zone_1)
+#show_pente(zone_1)
 
 x1 = np.arange(0,taille1)
 y1 = np.arange(0,taille1)
 X1,Y1 = np.meshgrid(x1,y1)
 
-print(zone_1.shape)
+#print(zone_1.shape)
 cmap = plt.cm.magma
 img = plt.contourf(X1, Y1, zone_1, levels=100, cmap=cmap)
 plt.contour(X1, Y1, zone_1, levels=8, colors='black')
@@ -485,8 +569,8 @@ plt.title('Zone 1')
 plt.colorbar(img, label='Altitude [m]')
 #plt.show()
 
-print(f"La pente est {Evans(zone_1)}")
-print(f"Le BPI est {BPI(zone_1, 50)}")
+#print(f"La pente est {Evans(zone_1)}")
+#print(f"Le BPI est {BPI(zone_1, 50)}")
 
 #show_BPI(BPI(zone_1, 50))
 #show_pente(zone_1)
@@ -504,7 +588,21 @@ for i, r in enumerate(radii):
     plt.axis('off')
 
 plt.tight_layout()
+#plt.show()
+
+n = [5, 20]
+fig, axs = plt.subplots(1, len(n), figsize=(15, 10))
+
+for i, k in enumerate(n):
+    rug_img = rugosite(zone_1, k)
+    im = axs[i].imshow(rug_img, cmap='viridis')
+    axs[i].set_title(f'Rugosité, n = {k}')
+    axs[i].axis('off')
+    fig.colorbar(im, ax=axs[i], shrink=0.8, fraction=0.046)
+
+plt.tight_layout()
 plt.show()
+
 
 
 
@@ -514,23 +612,36 @@ from matplotlib.patches import Patch
 
 def afficher_classes(classes):
     """
-    Affiche une matrice de classes avec des couleurs personnalisées (10 classes).
+    Affiche une matrice de classes avec des couleurs personnalisées (9 classes : 0 à 8).
     Une légende est ajoutée à droite avec le nom de chaque classe.
     """
-    couleurs = ([
-        'darkred', 'gold', 'white', 'red', 'orange','pink'])
-    # , 'darkorange', 'purple', 'lightgreen', 'lightblue',
-        # 'lime'])
-        #, 'lightyellow', 'teal', 'skyblue')]
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    from matplotlib.patches import Patch
 
-    labels = (([
-        'Large dépression', 'Large crête', 'Plat', 'Narrow dépression', 'Narrow crête in dépression','Plat in dépression']))
-        #, 'Narrow crête',
-        # 'Dépression sur crête', 'Crête dans pente',
-        # 'Dépression dans pente',
-        # 'Crête pente forte'])
-        #, 'Crête pente faible'])
-        #'Dépression pente forte', 'Dépression pente faible']
+    couleurs = [
+        'darkred',     # 0
+        'gold',        # 1
+        'white',       # 2
+        'red',         # 3
+        'orange',      # 4
+        'pink',        # 5
+        'lightgreen',  # 6
+        'darkorange',  # 7
+        'purple'       # 8
+    ]
+
+    labels = [
+        'Large dépression',                                    # 0
+        'Large crête',                                         # 1
+        'Plat / pente intermédiaire',                          # 2
+        'Dépression étroite dans zone plate',                  # 3
+        'Crête étroite dans zone plate',                       # 4
+        'Plat dans une zone plate',                            # 5
+        'Crête étroite dans une grande dépression',            # 6
+        'Dépression locale dans une grande dépression',        # 7
+        'Zone plate, pente douce, rugosité élevée'    # 8
+    ]
 
     cmap = ListedColormap(couleurs)
 
@@ -540,15 +651,16 @@ def afficher_classes(classes):
     plt.xlabel('X')
     plt.ylabel('Y')
 
-    # Créer les patches pour la légende
-    legend_elements = [Patch(facecolor=couleurs[i], edgecolor='black', label=labels[i]) for i in range(len(labels))]
+    legend_elements = [
+        Patch(facecolor=couleurs[i], edgecolor='black', label=labels[i])
+        for i in range(len(labels))
+    ]
 
-    # Afficher la légende à droite
     plt.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
-
     plt.tight_layout()
     plt.gca().invert_yaxis()
     plt.show()
+
 
 seuil1 = 3.27
 B_BPI = BPI(zone_1, 20)
@@ -571,13 +683,61 @@ for r in radii1:
 
 #for i in range(5,21):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, i)))
-
-afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1,15), Evans(zone_1)))
+n_rug=10
+afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 20), BPI(zone_1,18), Evans(zone_1), rugosite(zone_1,n_rug)))
 #afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 90), BPI(zone_1, 11),Evans(zone_1)))
 
 #for i  in range(1,15):
 #    afficher_classes(classifier_bathymetrie_BBPI(BPI(zone_1, 40), BPI(zone_1, i), Evans(zone_1)))
 
+
+zone1 = np.loadtxt(r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Zone 1-20250516\z_Zone1_8m.txt")
+zone_1 = zone1[:, :-1]
+taille1 = zone_1.shape[0]
+x1 = np.arange(0, taille1)
+y1 = np.arange(0, taille1)
+X1, Y1 = np.meshgrid(x1, y1)
+
+
+n_rug = 10
+B_BPI = BPI(zone_1, 20)
+F_BPI = BPI(zone_1, 18)
+pente = Evans(zone_1)
+rug = rugosite(zone_1, n_rug)
+classes = classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rug)
+
+# === Subplots ===
+fig, axs = plt.subplots(1, 2, figsize=(14, 7), constrained_layout=True)
+
+# --- 1. Affichage du MNT ---
+img1 = axs[0].contourf(X1, Y1, zone_1, levels=100, cmap=plt.cm.viridis)
+axs[0].contour(X1, Y1, zone_1, levels=8, colors='black')
+axs[0].set_title('Zone 1')
+axs[0].axis('off')
+fig.colorbar(img1, ax=axs[0], shrink=0.8, fraction=0.046, label='Altitude [m]')
+
+# --- 2. Affichage classification ---
+couleurs = [
+    'darkred', 'gold', 'white', 'red', 'orange',
+    'pink', 'lightgreen', 'darkorange', 'purple'
+]
+labels = [
+    'Large dépression', 'Large crête', 'Plat / pente intermédiaire',
+    'Dépression étroite', 'Crête étroite', 'Plat dans dépression',
+    'Crête dans grande dépression', 'Dépression locale', 'Zone plate rugueuse'
+]
+cmap = ListedColormap(couleurs)
+img2 = axs[1].imshow(classes, cmap=cmap, origin='lower')
+axs[1].set_title('Classification')
+axs[1].axis('off')
+legend_elements = [
+    Patch(facecolor=couleurs[i], edgecolor='black', label=labels[i]) for i in range(len(labels))
+]
+axs[1].legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
+fig.colorbar(img2, ax=axs[1], shrink=0.8, fraction=0.046, label='Classe')
+
+#plt.tight_layout()
+plt.show()
 
 ##Machine learning
 
@@ -585,7 +745,7 @@ x = np.arange(zone_1.shape[1])
 y = np.arange(zone_1.shape[0])
 X, Y = np.meshgrid(x, y)
 
-print('Pente FCN')
+#print('Pente FCN')
 p_evans = Evans(zone_1)
 
 print('W BPI')
