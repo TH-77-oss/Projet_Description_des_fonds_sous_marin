@@ -460,7 +460,7 @@ def show_rugosite2(M):
 
 
 #def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=1.5, stdv=1):
-def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rugosite, seuil1=3.27,seuil2=0.8, seuil3=45, seuil4=1.8, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rugosite, seuil1=3.27,seuil2=1.3, seuil3=45, seuil4=1.8, stdv=1):
     """
     Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
@@ -615,35 +615,38 @@ def afficher_classes(classes):
     import matplotlib.pyplot as plt
     from matplotlib.colors import ListedColormap
     from matplotlib.patches import Patch
+    import numpy as np
 
     couleurs = [
         'darkred',     # 0
-        'gold',        # 1
+        'purple',      # 1
         'white',       # 2
         'red',         # 3
         'orange',      # 4
-        'pink',        # 5
+        'gold',        # 5
         'lightgreen',  # 6
-        'cyan',  # 7
-        'purple'       # 8
+        'cyan',        # 7
+        'darkblue'     # 8
     ]
 
     labels = [
-        'Large dépression',                                    # 0
-        'Large crête',                                         # 1
-        'Plat / pente intermédiaire',                          # 2
-        'Dépression étroite dans zone plate',                  # 3
-        'Crête étroite dans zone plate',                       # 4
-        'Plat dans une zone plate',                            # 5
-        'Crête étroite dans une grande dépression',            # 6
-        'Dépression locale dans une grande dépression',        # 7
-        'Zone plate, pente douce, rugosité élevée'    # 8
+        'Large dépression',
+        'Large crête',
+        'Plat / pente intermédiaire',
+        'Dépression étroite dans zone plate',
+        'Crête étroite dans zone plate',
+        'Plat dans une zone plate',
+        'Crête étroite dans une grande dépression',
+        'Dépression locale dans une grande dépression',
+        'Zone plate, pente douce, rugosité élevée'
     ]
 
     cmap = ListedColormap(couleurs)
 
+    ny, nx = classes.shape  # pour définir correctement extent
+
     plt.figure(figsize=(10, 8))
-    im = plt.imshow(classes, cmap=cmap, origin='lower')
+    im = plt.imshow(classes, cmap=cmap, origin='lower', extent=(0, nx, 0, ny))
     plt.title('Classification bathymétrique')
     plt.xlabel('X')
     plt.ylabel('Y')
@@ -655,8 +658,8 @@ def afficher_classes(classes):
 
     plt.legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
     plt.tight_layout()
-    plt.gca().invert_yaxis()
     plt.show()
+
 
 
 seuil1 = 3.27
