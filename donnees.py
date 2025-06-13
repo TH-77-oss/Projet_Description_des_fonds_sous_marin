@@ -37,9 +37,6 @@ from sklearn.preprocessing import StandardScaler
 # plt.colorbar(img, label='Altitude [m]')
 # plt.show()
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 # Chemins vers les fichiers
 txts = [
     r"C:\ENSTA\Projet_Description_des_fonds_sous_marin\Code\Donnees_artificielles-20250507\double_sin.txt",
@@ -462,8 +459,8 @@ def show_rugosite2(M):
 #show_rugosite2(rugosite2(mnt,3))
 
 
-#def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=0.5, stdv=1):
-def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rugosite, seuil1=3.27,seuil2=1.5, seuil3=45, seuil4=1.8, stdv=1):
+#def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente ,seuil=1.5, stdv=1):
+def classifier_bathymetrie_BBPI(B_BPI, F_BPI, pente, rugosite, seuil1=3.27,seuil2=0.8, seuil3=45, seuil4=1.8, stdv=1):
     """
     Classe les zones bathymétriques en 10 classes selon le B-BPI et F-BPI.
 
@@ -573,7 +570,7 @@ plt.colorbar(img, label='Altitude [m]')
 #print(f"Le BPI est {BPI(zone_1, 50)}")
 
 #show_BPI(BPI(zone_1, 50))
-#show_pente(zone_1)
+show_pente(zone_1)
 
 radii = [10, 20, 30]
 
@@ -588,7 +585,7 @@ for i, r in enumerate(radii):
     plt.axis('off')
 
 plt.tight_layout()
-#plt.show()
+plt.show()
 
 n = [5, 20]
 fig, axs = plt.subplots(1, len(n), figsize=(15, 10))
@@ -627,7 +624,7 @@ def afficher_classes(classes):
         'orange',      # 4
         'pink',        # 5
         'lightgreen',  # 6
-        'darkorange',  # 7
+        'cyan',  # 7
         'purple'       # 8
     ]
 
@@ -666,19 +663,26 @@ seuil1 = 3.27
 B_BPI = BPI(zone_1, 20)
 mask_flat = np.abs(B_BPI) < seuil1  # zones à garder (valeurs entre -seuil1 et +seuil1)
 radii1 = [5, 10, 15]
-for r in radii1:
-    F_BPI = BPI(zone_1, r)
 
-    # On masque les zones où B_BPI est hors des limites : elles deviennent NaN
+# Créer une seule figure avec assez de subplots
+fig, axes = plt.subplots(1, len(radii1), figsize=(5 * len(radii1), 5))
+
+# Si len(radii1) == 1, axes n'est pas un tableau, donc on force la forme
+if len(radii1) == 1:
+    axes = [axes]
+
+for i, r in enumerate(radii1):
+    F_BPI = BPI(zone_1, r)
     masked_F_BPI = np.where(mask_flat, F_BPI, np.nan)
 
-    # Affichage uniquement des zones valides
-    plt.figure(figsize=(6, 6))
-    im = plt.imshow(masked_F_BPI, cmap='bwr', norm=CenteredNorm(0, halfrange=0.5))
-    plt.colorbar(im)
-    plt.title(f'Fine BPI (r={r}) | Zones où -{seuil1} < B_BPI < {seuil1}')
-    plt.axis('off')
-    #plt.show()
+    im = axes[i].imshow(masked_F_BPI, cmap='bwr', norm=CenteredNorm(0, halfrange=0.5))
+    fig.colorbar(im, ax=axes[i])
+    axes[i].set_title(f'Fine BPI (r={r})\nZones -{seuil1} < B_BPI < {seuil1}')
+    axes[i].axis('off')
+
+plt.tight_layout()
+plt.show()
+
 
 
 #for i in range(5,21):
@@ -719,7 +723,7 @@ fig.colorbar(img1, ax=axs[0], shrink=0.8, fraction=0.046, label='Altitude [m]')
 # --- 2. Affichage classification ---
 couleurs = [
     'darkred', 'gold', 'white', 'red', 'orange',
-    'pink', 'lightgreen', 'darkorange', 'purple'
+    'pink', 'lightgreen', 'cyan', 'purple'
 ]
 labels = [
     'Large dépression', 'Large crête', 'Plat / pente intermédiaire',
@@ -737,7 +741,7 @@ axs[1].legend(handles=legend_elements, bbox_to_anchor=(1.05, 1), loc='upper left
 fig.colorbar(img2, ax=axs[1], shrink=0.8, fraction=0.046, label='Classe')
 
 #plt.tight_layout()
-plt.show()
+#plt.show()
 
 ##Machine learning
 
@@ -762,7 +766,7 @@ df = pandas.DataFrame({'x': X.flatten(), 'y': Y.flatten(), 'z': zone_1.flatten()
 data = df.dropna().copy()
 
 # Choix du nombre de classes :
-n = 11
+n = 7
 # Le paramètre random_state permet d'avoir des classifications reproductibles
 kmeans = cluster.KMeans(n_clusters=n, n_init='auto', random_state=42)
 # Colonnes sélectionnées pour la classification
